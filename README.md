@@ -14,16 +14,16 @@ The data used for this manuscript were made available by the original Authors wi
 
 **Kuebbing et al. 2015**
 
-- (Article)[https://nph.onlinelibrary.wiley.com/doi/full/10.1111/nph.13488]
+- [Article](https://nph.onlinelibrary.wiley.com/doi/full/10.1111/nph.13488)
 - Data (made available by the corresponding author)
 
 **Rakowski and Cardinale 2016**
 
-- (Article)[https://onlinelibrary.wiley.com/doi/full/10.1111/oik.03105]
-- (Data)[https://datadryad.org/resource/doi:10.5061/dryad.j1617]
+- [Article](https://onlinelibrary.wiley.com/doi/full/10.1111/oik.03105)
+- [Data](https://datadryad.org/resource/doi:10.5061/dryad.j1617)
 
 **Pennekamp et al. 2018** 
 
-- (Article)[https://www.nature.com/articles/s41586-018-0627-8]
-- (Data)[https://github.com/pennekampster/Code_and_data_OverallEcosystemStability]
+- [Article](https://www.nature.com/articles/s41586-018-0627-8)
+- [Data](https://github.com/pennekampster/Code_and_data_OverallEcosystemStability)
 
