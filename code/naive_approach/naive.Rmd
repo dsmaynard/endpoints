@@ -1,0 +1,90 @@
+---
+title: "Fitting endpoints: naive approach"
+author: Daniel Maynard, Zachary Miller and Stefano Allesina
+output: github_document
+---
+
+Here we show how to fit the endpoints or predict out of fit the endpoints using the naive approach presented in the Materials and Methods. This method is similar to a linear regression. The advantage is that it is quite fast and allows one to understand the mechanics of the model very well. The downside is that it can return nonsensical solutions (e.g., negative abundances) if the data deviate from what expected. 
+
+All the code needed for the analysis is in the file `naive.R`. The libraries `MASS` and `tidyverse` need to be installed for the code to run. 
+
+```{r, message=FALSE, warning=FALSE}
+source("naive.R")
+```
+
+
+### Step 1: label the data
+
+First, call the function `prepare_data` using one of the available data sets, or any other data set organized in the same manner. The data file should be a `csv` with one column for each species, and one row for each recorded endpoint. The header should specify the name of the species. For example:
+
+```{r, warning=FALSE, message=FALSE}
+dt <- read_csv("../../data/Kuebbing_plants/natives.csv")
+dt %>% sample_n(10) # show 10 endpoints sampled at random
+```
+
+The function `prepare_data` simply adds a column containing a label for the community. For example:
+
+```{r, warning=FALSE, message=FALSE}
+dt <- prepare_data("../../data/Kuebbing_plants/natives.csv")
+dt %>% sample_n(10) # show 10 endpoints sampled at random
+```
+
+### Step 2: fitting all endpoints
+
+To use all of the available data to parameterize the matrix $B$, simply call:
+
+```{r, warning=FALSE, message=FALSE}
+out <- fit_endpoints(dt)
+```
+
+The function returns a list, containing the best-fitting matrix $B$:
+
+```{r, warning=FALSE, message=FALSE}
+out$B
+```
+
+And a tibble containing, for each community, the observed vs. fitted values:
+
+```{r, warning=FALSE, message=FALSE}
+out$results
+```
+
+The results can be visualized using:
+
+```{r, warning=FALSE, message=FALSE}
+stats_and_plot_results(out$results)
+```
+
+### Step 3: predicting out of fit
+
+The function `predict_out_of_fit` implements the out-of-fit prediction presented in the manuscript. In turn, each endpoint (and all its replicates) is removed, and the remaining data is used to predict the coexistence abundance of the remaining species. Negative abundances mean lack of coexistence for the community. The program sets all abundances to -1 in this case.
+
+For example:
+
+```{r, warning=FALSE, message=FALSE}
+loo <- predict_out_of_fit(dt)
+stats_and_plot_results(loo)
+```
+
+### Poor performance of naive approach
+
+While the results are good for the data by Kuebbing *et al.* (2015), presented above, the other data sets show that this approach cannot successfully predict the endpoints. For example:
+
+```{r, warning=FALSE, message=FALSE}
+# in-fit Rakowski and Cardinale (2016)
+dtrc <- prepare_data("../../data/Cardinale_daphnia/cd_algae.csv")
+out <- fit_endpoints(dtrc)
+stats_and_plot_results(out$results) 
+```
+
+Where several communities that were observed experimentally are predicted to collapse. Similar problems are found when using the data from Pennekamp et al. (2018):
+
+```{r, warning=FALSE, message=FALSE}
+# in-fit Pennekamp et al. 2018
+dtp <- prepare_data("../../data/Pennekamp_protists/temp_17.csv")
+out <- fit_endpoints(dtp)
+stats_and_plot_results(out$results) 
+```
+
+
+
