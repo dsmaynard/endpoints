@@ -1,0 +1,34 @@
+---
+title: "Fitting endpoints: naive approach"
+author: Daniel Maynard, Zachary Miller and Stefano Allesina
+output: github_document
+---
+
+
+Here we show how to fit the endpoints or predict out of fit using the Bayesian approach, as presented in the main text. This method accounts for log-normal measurement error in each endpoint abundance, and for the fact that each endpoint appears in multiple different equations. This method is the recommended appraoch for fitting this model, though it is computationally intensive.
+
+
+All the code needed for the analysis is in the file `bayes.R`. The Bayesian MCMC algorithm is implemented in the Stan programming language, which is called here from within `R`. The details of model is given in `Stan_file.stan`, which instructs the MCMC samler how to calculate the log-likelihood at each step. Please see `https://mc-stan.org/users/interfaces/` for isntructions on installing Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and `coda` need to be installed for this code to run. 
+
+
+
+```{r, message=FALSE, warning=FALSE}
+source("bayes.R")
+```
+
+
+### Step 1: label the data
+
+
+# read in the endpoint matrix
+E <- read_csv("../data/Kuebbing_plants/invasives.csv")
+
+# fit the stan model
+stan_results <- fit_stan(E, exclude = c("as-la-po","as-po"), chains = 2, cores = 2, iter = 10000, warmup = 5000, thin = 15, seed=11)
+	
+plot_diagnostics(stan_results)
+
+br <- bootstrap_results(stan_results, nboot=100)
+
+pl <- plot_boot_results(br)
+
