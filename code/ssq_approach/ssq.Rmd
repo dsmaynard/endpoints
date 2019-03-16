@@ -1,0 +1,151 @@
+---
+title: "Fitting endpoints: sum-of-squares approach"
+author: Daniel Maynard, Zachary Miller and Stefano Allesina
+output: github_document
+---
+
+Here we show how to fit the endpoints or predict them out-of-fit using the sum-of-square approach presented in the Materials and Methods. The approach is based on numerical optimization. It can account for different error structures (i.e., observed values sampled from a Normal or Log-Normal distribution), and is considerably faster than the Bayesian approach that uses MCMC to construct a posterior distribution. The downside is that numerical optimization requires a good initial guess of the matrix $B$ to converge to a global minimum, and that there could be many parameterizations that are "local minima", making the search hard. Moreover, it only return point estimates (vs. a distribution in the Bayesian approach).
+
+All the code needed for the analysis is contained in the file `ssq.R`. The library `tidyverse` needs to be installed for the code to run.
+
+```{r, message=FALSE, warning=FALSE}
+# requires library tidyverse
+source("ssq.R")
+```
+
+### Step 1: label the data
+
+First, call the function `prepare_data` using one of the available data sets, or any other data set organized in the same manner. The data file should be in `csv` format, with one column for each species, and one row for each recorded endpoint. The header should specify the name of the species. For example:
+
+```{r, warning=FALSE, message=FALSE}
+dt <- read_csv("../../data/Kuebbing_plants/natives.csv")
+dt %>% sample_n(10) # show 10 endpoints sampled at random
+```
+
+The function `prepare_data` simply adds a column containing a label for the community. For example:
+
+```{r, warning=FALSE, message=FALSE}
+dt <- prepare_data("../../data/Kuebbing_plants/natives.csv")
+dt %>% sample_n(10) # show 10 endpoints sampled at random
+```
+
+### Step 2: fitting all endpoints
+
+To use all of the available data to parameterize the matrix $B$, call the function `fit_endpoints`. The function allows to adjust several parameters:
+
+- `use_logs = FALSE` if set to `TRUE`, compute the SSQ using the log of the observed and predicted abundances
+- `initial_matrix = NULL` if specified, use the matrix to start the numerical search (needs to be of size $n \times n$, where $n$ is the number of species in the system)
+- `method = "BFGS"` method to use for the numerical optimization (using `optim`; for example, `method = "Nelder-Mead"`)
+- `num_steps = 5000` maximum number of iterations for the `optim` function
+- `show_progress = FALSE` track the progress of the optimization routine
+
+For example,
+
+```{r, warning=FALSE, message=FALSE, eval = FALSE}
+out <- fit_endpoints(dt, use_logs = TRUE, show_progress = TRUE)
+```
+```{r, echo=FALSE}
+# to speed up compilation, use already-computed values
+load("already_computed/natives_fit_all.RData")
+```
+
+The function returns a list, containing the best-fitting matrix $B$:
+
+```{r, warning=FALSE, message=FALSE}
+out$B
+```
+
+And a tibble containing, for each community, the observed vs. fitted values:
+
+```{r, warning=FALSE, message=FALSE}
+out$results
+```
+
+The results can be visualized using:
+
+```{r, warning=FALSE, message=FALSE}
+stats_and_plot_results(out$results)
+```
+
+Note that the matrix $B$ obtained in the manner can be fed back to the function, to further refine the results. For example
+
+```{r, warning=FALSE, message=FALSE}
+out <- fit_endpoints(dt, use_logs = TRUE, method = "Nelder-Mead", initial_matrix = out$B)
+```
+
+### Step 3: predicting out of fit
+
+The function `predict_out_of_fit` implements the out-of-fit prediction scheme presented in the manuscript. In turn, each endpoint (and all its replicates) is removed, and the remaining data are used to predict the coexistence abundance of the species at the removed endpoint. Negative abundances should be interpreted as lack of coexistence for the community (the program sets all abundances to -1 in this case). **Note:** This function can take a very long time to run, as the optimization is repeated once for each endpoint.
+
+For example:
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+loo <- predict_out_of_fit(dt, use_logs = TRUE)
+```
+```{r, echo=FALSE}
+load("already_computed/natives_loo.RData")
+```
+```{r}
+stats_and_plot_results(loo) + scale_x_log10() + scale_y_log10()
+```
+
+### Better performance than naive approach
+
+Compared to the naive approach, we are now able to fit the data much better. For example, using the data from Pennekamp *et al.* (2018):
+
+```{r, warning=FALSE, message=FALSE, eval = FALSE}
+# in-fit Pennekamp et al. 2018
+dtp <- prepare_data("../../data/Pennekamp_protists/temp_17.csv")
+out <- fit_endpoints(dtp, use_logs = TRUE)
+stats_and_plot_results(out$results) + scale_x_log10() + scale_y_log10()
+```
+
+```{r, echo=FALSE}
+load("already_computed/temp_17.RData")
+stats_and_plot_results(out$results) + scale_x_log10() + scale_y_log10()
+```
+
+We see that we were able to find a solution that is compatible with all observed endpoints (while the naive method resulted in the lack of coexistence for several communities that were observed experimentally).
+
+To show how the starting matrix can be initialized, we consider the data of Rakowski and Cardinale (2016), where the first species is a consumer (and therefore we expect a corresponding positive diagonal term). We write a simple function to build the matrix that we're going to use as a starting point:
+
+```{r}
+build_init <- function(n, consumer, diagc = 0.5, diagp = -1, pp = -0.5, cc = 0, cp = -2, pc = -0.2){
+  B <- matrix(pp, n, n)
+  diag(B)[consumer] <- diagc
+  diag(B)[!consumer] <- diagp
+  B[consumer, !consumer] <- cp
+  B[!consumer, consumer] <- pc
+  return(B)
+}
+```
+
+And then call the optimization function repeatedly, to refine our fitted matrix $B$:
+
+```{r, eval = FALSE}
+drc <- prepare_data("../../data/Rakowski_daphnia/cd_algae.csv")
+# start with positive diagonal for consumers
+out <- fit_endpoints(drc, use_logs = TRUE, initial_matrix = build_init(5, c(T, F, F, F, F)), 
+                     method = "Nelder-Mead", show_progress = TRUE, num_steps = 10000)
+# refine the solution to obtain a better fit
+out2 <- fit_endpoints(drc, use_logs = TRUE, initial_matrix = out$B, 
+                     method = "Nelder-Mead", show_progress = TRUE, num_steps = 10000)
+out3 <- fit_endpoints(drc, use_logs = TRUE, initial_matrix = out2$B, 
+                     show_progress = TRUE, num_steps = 10000)
+```
+
+```{r, echo=FALSE}
+load("already_computed/cd_algae_out3.RData")
+```
+
+Note the positive diagonal for the consumer (`cd`, first row/col):
+```{r}
+out3$B
+```
+
+And the better fit to the data:
+
+```{r}
+stats_and_plot_results(out3$results) + scale_x_log10() + scale_y_log10()
+```
+
