@@ -4,18 +4,19 @@ author: Daniel Maynard, Zachary Miller and Stefano Allesina
 output: github_document
 ---
 
-Here we show how to fit the endpoints or predict out of fit the endpoints using the naive approach presented in the Materials and Methods. This method is similar to a linear regression. The advantage is that it is quite fast and allows one to understand the mechanics of the model very well. The downside is that it can return nonsensical solutions (e.g., negative abundances) if the data deviate from what expected. 
+Here we show how to fit the endpoints or predict them out-of-fit using the naive approach presented in the Materials and Methods. The approach is similar to a linear regression. The advantage of this method is that it is quite fast, and it allows to understand the mechanics of the model very well. The downside is that it can return nonsensical solutions (e.g., negative abundances) if the data deviate from what expected. 
 
-All the code needed for the analysis is in the file `naive.R`. The libraries `MASS` and `tidyverse` need to be installed for the code to run. 
+All the code needed for the analysis is contained in the file `naive.R`. The libraries `MASS` and `tidyverse` need to be installed for the code to run.
 
 ```{r, message=FALSE, warning=FALSE}
+# requires libraries tidyverse and MASS
 source("naive.R")
 ```
 
 
 ### Step 1: label the data
 
-First, call the function `prepare_data` using one of the available data sets, or any other data set organized in the same manner. The data file should be a `csv` with one column for each species, and one row for each recorded endpoint. The header should specify the name of the species. For example:
+First, call the function `prepare_data` using one of the available data sets, or any other data set organized in the same manner. The data file should be in `csv` format, with one column for each species, and one row for each recorded endpoint. The header should specify the name of the species. For example:
 
 ```{r, warning=FALSE, message=FALSE}
 dt <- read_csv("../../data/Kuebbing_plants/natives.csv")
@@ -57,7 +58,7 @@ stats_and_plot_results(out$results)
 
 ### Step 3: predicting out of fit
 
-The function `predict_out_of_fit` implements the out-of-fit prediction presented in the manuscript. In turn, each endpoint (and all its replicates) is removed, and the remaining data is used to predict the coexistence abundance of the remaining species. Negative abundances mean lack of coexistence for the community. The program sets all abundances to -1 in this case.
+The function `predict_out_of_fit` implements the out-of-fit prediction scheme presented in the manuscript. In turn, each endpoint (and all its replicates) is removed, and the remaining data are used to predict the coexistence abundance of the species at the removed endpoint. Negative abundances should be interpreted as lack of coexistence for the community (the program sets all abundances to -1 in this case).
 
 For example:
 
@@ -72,12 +73,12 @@ While the results are good for the data by Kuebbing *et al.* (2015), presented a
 
 ```{r, warning=FALSE, message=FALSE}
 # in-fit Rakowski and Cardinale (2016)
-dtrc <- prepare_data("../../data/Cardinale_daphnia/cd_algae.csv")
+dtrc <- prepare_data("../../data/Rakowski_daphnia/cd_algae.csv")
 out <- fit_endpoints(dtrc)
 stats_and_plot_results(out$results) 
 ```
 
-Where several communities that were observed experimentally are predicted to collapse. Similar problems are found when using the data from Pennekamp et al. (2018):
+Where several communities that were observed experimentally are predicted to collapse. Similar problems are found when using the data from Pennekamp *et al.* (2018):
 
 ```{r, warning=FALSE, message=FALSE}
 # in-fit Pennekamp et al. 2018
