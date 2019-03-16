@@ -6,7 +6,9 @@ You can find a preprint of the manuscript here [LINK TO BE UPDATED]
 
 ## Organization of the repository
 
+The `data` folder contains the data sets considered in the manuscript. The data were reorganized to simplify the analysis. Please acknowledge and cite the original authors (listed below) if you want to use the data. We also link the data repositories where the original data can be found, and the articles where the data are described.
 
+The `code` folder contains three sub-folders, each dedicated to a different method to fit the endpoints (all described in the Materials and Methods). All the code is in `R`, and the `README` file illustrate how to use the code on the data provided here, or on original data.
 
 ## Data credits
 
