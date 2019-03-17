@@ -1,14 +1,14 @@
 ---
-title: "Fitting endpoints: naive approach"
+title: "Fitting endpoints: Bayesian approach"
 author: Daniel Maynard, Zachary Miller and Stefano Allesina
 output: github_document
 ---
 
 
-Here we show how to fit the endpoints or predict out of fit using the Bayesian approach, as presented in the main text. This method accounts for log-normal measurement error in each endpoint abundance, and for the fact that each endpoint appears in multiple different equations. This method is the recommended appraoch for fitting this model, though it is computationally intensive.
+Here we show how to fit the endpoints or predict out of fit using the Bayesian approach, as presented in the main text. This method accounts for log-normal measurement error in each endpoint abundance, and for the fact that each endpoint appears in multiple different equations. This method is the recommended approach for fitting this model, though it is computationally intensive.
 
 
-All the code needed for the analysis is in the file `bayes.R`. The Bayesian MCMC algorithm is implemented in the Stan programming language, which is called here from within `R`. The details of model is given in `Stan_file.stan`, which instructs the MCMC samler how to calculate the log-likelihood at each step. Please see `https://mc-stan.org/users/interfaces/` for isntructions on installing Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and `coda` need to be installed for this code to run. 
+All the code needed for the analysis is in the file `bayes.R`. The Bayesian MCMC algorithm is implemented in the Stan programming language, which is called here from within `R`. The details of model is given in `Stan_file.stan`, which instructs the MCMC sampler how to calculate the log-likelihood at each step. Please see `https://mc-stan.org/users/interfaces/` for instructions on installing Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and `coda` need to be installed for this code to run. 
 
 
 
@@ -19,16 +19,100 @@ source("bayes.R")
 
 ### Step 1: label the data
 
+First, call the function prepare_data using one of the available data sets, or any other data set organized in the same manner. The data file should be in csv format, with one column for each species, and one row for each recorded endpoint. The header should specify the name of the species. For example:
 
-# read in the endpoint matrix
-E <- read_csv("../data/Kuebbing_plants/invasives.csv")
+```{r, message=FALSE, warning=FALSE}
+dt <- read_csv("../../data/Kuebbing_plants/natives.csv")
+dt %>% sample_n(10) # show 10 endpoints sampled at random
+```
 
-# fit the stan model
-stan_results <- fit_stan(E, exclude = c("as-la-po","as-po"), chains = 2, cores = 2, iter = 10000, warmup = 5000, thin = 15, seed=11)
+The function prepare_data simply adds a column containing a label for the community. For example:
+
+```{r, message=FALSE, warning=FALSE}
+dt <- prepare_data("~/Git/endpoints/github/data/Kuebbing_plants/invasives.csv")
+dt %>% sample_n(10)
+```
+
+
+### Step 2: fitting all endpoints
+
+To use all of the available data to estimate $B$ via a Bayesian approach, call the function `fit_stan`, which calls the `stan` function within R. The `fit_stan` function allows you to adjust several parameters:
+
+
+- `stan_file` gives the location of the Stan file used for fitting
+-  `exclude` specifies which communities to exclude. If set to `NULL` (default) all endpoints are used. Otherwise it takes a character vector of communities, e.g., `c("fa","fa-po")`.
+- `B_upper` is a binary matrix of dimension $n\times n$ indicating the upper bounds on each entry of B. A matrix of all $1$s would specify no upper bound for any element; a matrix with $1$s on the off-diagonal and $0$ on the diagonal would constrain the diagonal entries to be negative. The default is a purely competitive community (`B_upper = 0`)
+- `B_lower` is a binary matrix of dimension $n\times n$ indicating the lower bounds on each entry of B. A matrix of all $-1$s would specify no lower bound for any element; a matrix with $-1$s on the off-diagonal and $0$ on the diagonal would constrain the diagonal entries to be positive. The defaults is no lower bound (`B_upper = -1`)
+- `chains` the number of mcmc chains to run
+- `cores` the number of processor cores to use
+- `iter` the number of MCMC iterations
+-  `warmup` the number of warm-up iterations before sampling
+- `thin` the number of iterations to skip between samples
+-  `seed` the random seem for the Stan function (default is `10`)
 	
-plot_diagnostics(stan_results)
+	
+For example, here we fit two short chains (5000 iterations) to the full invasive plant data using two cores: 
+```{r, message=TRUE, warning=FALSE}
+stan_results <- fit_stan(dt, stan_file = "Stan_file.stan", chains = 2, 
+				   cores = 2, iter = 5000, warmup = 2000, thin = 15)
+```
 
-br <- bootstrap_results(stan_results, nboot=100)
+## Plotting diagnostics
+The resulting output is a named list that contains the details of the fit (original data, excluded communities, number of iterations, etc.) as well as the MCMC results. For example, here are the first 10 iterations of the MCMC run, showing the first 4 coefficients (first column) of $B$:
 
-pl <- plot_boot_results(br)
+```{r, message=TRUE, warning=FALSE}
+as.matrix(stan_results$stan_fit)[1:10,1:4]
+```
+
+
+From this output, we can plot diagnostics by calling the `plot_diagnostics` function, specifying either histogram of $B$ (`show_plot = "hist"`) or the full MCMC output across all iterations (`show_plot = "chains"`), or both. For example, here's the histogram of the posterior of $B$:
+
+```{r, message=TRUE, warning=FALSE}
+plot_diagnostics(stan_results, show_plot = "hist") 
+```
+
+
+### Step 3: predicting endpoints
+
+To predict the endpoint abundance for a specific subset of species $s$, we take a bootstrap sample from the posterior of $B$ and $\sigma$, subset the matrix $B$ by taking the rows and columns corresponding to $s$, and calculate the negative row sum of this sub-matrix $B_s$, yielding an estimate of $x^{(s)}$. To estimate the prediction interval, which takes into account the error, we can sample this endpoint abundance from a log-normal distribution, with standard deviation of $\sigma_s$. 
+
+This process is implemented in the `boostrap_results` function, which takes the previous `stan_results` list, along with a specified number of bootstrap samples, here set to 500:
+
+```{r, message=TRUE, warning=FALSE}
+br <- bootstrap_results(stan_results, nboot=500)
+```
+
+From this, we can plot the results using the `plot_boot_results` function, either specifying the observed vs. predicted plot (`show_plot = "obs_pred"`) or the violin plots of the prediction intervals (`show_plot = "violin"`), or both:
+
+```{r, message=TRUE, warning=FALSE}
+pl <- plot_boot_results(br, show_plot = "both")
+```
+
+If no communities were excluded from the fitting process, this function will plot all the posterior prediction interval of all communities (including unobserved communities, for example, `as-la-po`, above).
+
+### Step 4: predicting out-of-fit
+
+We can repeat this above analysis, but with the removal of one or more communities to test the out-of-fit predictions. To do this, we specify which communities to exclude by listing as a character vector when we call `fit_stan`. Importantly, this function performs a check on the endpoint matrix: if we exclude too many communities, or if the original endpoint matrix contain an insufficient number of endpoints to fit $B$, then this function will return an error before calling Stan. Here, for example, we exclude too many communities, such that species `as` and `fa` never occur together:
+
+```{r, message=TRUE, warning=FALSE, error=TRUE}
+stan_reduced <- fit_stan(dt, exclude = c("as-fa","as-fa-la","as-fa-la-po"),
+						 stan_file = "Stan_file.stan", chains = 2, cores = 2, iter = 5000, 
+						 warmup = 2000, thin = 15, seed=12)
+```
+
+Otherwise, provided there are enough endpoints, the specified communities are removed from the dataset, and the Stan file is implemented on the reduced data:
+
+```{r, message=TRUE, warning=FALSE}
+stan_reduced <- fit_stan(dt, exclude = c("po","as-fa-la"),
+						 stan_file = "Stan_file.stan", chains = 2, cores = 2, iter = 5000, 
+						 warmup = 2000, thin = 15, seed=12)
+```
+
+After bootstrapping these results, the `plot_boot_results` function plots the predictions for the omitted communities:
+
+```{r, message=TRUE, warning=FALSE}
+br_reduced <- bootstrap_results(stan_reduced, nboot=500)
+pl_reduced <- plot_boot_results(br_reduced, show_plot = "both")
+```
+
 
