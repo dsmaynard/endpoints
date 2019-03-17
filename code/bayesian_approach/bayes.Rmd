@@ -57,7 +57,8 @@ stan_results <- fit_stan(dt, stan_file = "Stan_file.stan", chains = 2,
 				   cores = 2, iter = 5000, warmup = 2000, thin = 15)
 ```
 
-## Plotting diagnostics
+#### Plotting diagnostics
+
 The resulting output is a named list that contains the details of the fit (original data, excluded communities, number of iterations, etc.) as well as the MCMC results. For example, here are the first 10 iterations of the MCMC run, showing the first 4 coefficients (first column) of $B$:
 
 ```{r, message=TRUE, warning=FALSE}

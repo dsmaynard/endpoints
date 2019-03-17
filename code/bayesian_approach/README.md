@@ -2,9 +2,9 @@ Fitting endpoints: Bayesian approach
 ================
 Daniel Maynard, Zachary Miller and Stefano Allesina
 
-Here we show how to fit the endpoints or predict out of fit using the Bayesian approach, as presented in the main text. This method accounts for log-normal measurement error in each endpoint abundance, and for the fact that each endpoint appears in multiple different equations. This method is the recommended appraoch for fitting this model, though it is computationally intensive.
+Here we show how to fit the endpoints or predict out of fit using the Bayesian approach, as presented in the main text. This method accounts for log-normal measurement error in each endpoint abundance, and for the fact that each endpoint appears in multiple different equations. This method is the recommended approach for fitting this model, though it is computationally intensive.
 
-All the code needed for the analysis is in the file `bayes.R`. The Bayesian MCMC algorithm is implemented in the Stan programming language, which is called here from within `R`. The details of model is given in `Stan_file.stan`, which instructs the MCMC samler how to calculate the log-likelihood at each step. Please see `https://mc-stan.org/users/interfaces/` for isntructions on installing Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and `coda` need to be installed for this code to run.
+All the code needed for the analysis is in the file `bayes.R`. The Bayesian MCMC algorithm is implemented in the Stan programming language, which is called here from within `R`. The details of model is given in `Stan_file.stan`, which instructs the MCMC sampler how to calculate the log-likelihood at each step. Please see `https://mc-stan.org/users/interfaces/` for instructions on installing Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and `coda` need to be installed for this code to run.
 
 ``` r
 source("bayes.R")
@@ -22,16 +22,16 @@ dt %>% sample_n(10) # show 10 endpoints sampled at random
     ## # A tibble: 10 x 4
     ##       as    fa    la    po
     ##    <dbl> <dbl> <dbl> <dbl>
-    ##  1 0      2.52 0     2.56 
-    ##  2 1.47   0    0     0    
-    ##  3 0      0    0     4.03 
-    ##  4 0.487  0    0     3.07 
-    ##  5 0      0    1.01  0    
-    ##  6 2.36   0    0     0    
-    ##  7 0      0    0     7.29 
-    ##  8 2.01   3.55 0.495 0    
-    ##  9 0.901  0    0.183 2.66 
-    ## 10 1.00   2.43 0     0.986
+    ##  1 2.46  0     0      0   
+    ##  2 0.390 3.17  0      3.27
+    ##  3 1.32  2.50  0      0   
+    ##  4 2.06  0     0      0   
+    ##  5 1.00  0     0.604  2.90
+    ##  6 0     4.32  1.43   0   
+    ##  7 0.781 0.967 0.446  2.22
+    ##  8 2.02  0     0      3.22
+    ##  9 2.26  1.90  0.308  0   
+    ## 10 0.592 2.06  0      3.05
 
 The function prepare\_data simply adds a column containing a label for the community. For example:
 
@@ -43,29 +43,29 @@ dt %>% sample_n(10)
     ## # A tibble: 10 x 5
     ##       as    fa    la    po community  
     ##    <dbl> <dbl> <dbl> <dbl> <chr>      
-    ##  1  0    11.7  0     0     fa         
-    ##  2  0     5.18 1.17  0.899 fa-la-po   
-    ##  3  1.99  0    0     1.04  as-po      
-    ##  4  0     5.56 1.56  0     fa-la      
-    ##  5  0     0    2.10  0     la         
-    ##  6  0     0    2.29  0.498 la-po      
-    ##  7  0     6.85 0     1.43  fa-po      
-    ##  8  0     4.84 0.902 1.05  fa-la-po   
-    ##  9  2.24  0    0     0     as         
-    ## 10  1.94  3.55 0.420 0.696 as-fa-la-po
+    ##  1 0      9.35 0     2.09  fa-po      
+    ##  2 2.01   0    0     0     as         
+    ##  3 2.24   0    0     0     as         
+    ##  4 1.79   0    0     1.12  as-po      
+    ##  5 0      0    1.45  1.12  la-po      
+    ##  6 0.699  3.42 0.215 1.96  as-fa-la-po
+    ##  7 0.648  6.19 0     0     as-fa      
+    ##  8 2.21   0    1.05  0.999 as-la-po   
+    ##  9 1.03   0    1.30  0.374 as-la-po   
+    ## 10 0.732  3.39 0.591 0.277 as-fa-la-po
 
 ### Step 2: fitting all endpoints
 
-To use all of the available data to estiamte *B* via a Bayesian approach, call the function `fit_stan`, which calls the `stan` function within R. The `fit_stan` function allows you to adjust several parameters:
+To use all of the available data to estimate *B* via a Bayesian approach, call the function `fit_stan`, which calls the `stan` function within R. The `fit_stan` function allows you to adjust several parameters:
 
--   `stan_file` gives the location of the Stan file used for fittnig
--   `exclude` speficies which communities to exclude. If set to `NULL` (default) all endpoints are used. Otherwise it takes a character vector of communities, e.g., `c("fa","fa-po")`.
+-   `stan_file` gives the location of the Stan file used for fitting
+-   `exclude` specifies which communities to exclude. If set to `NULL` (default) all endpoints are used. Otherwise it takes a character vector of communities, e.g., `c("fa","fa-po")`.
 -   `B_upper` is a binary matrix of dimension *n* × *n* indicating the upper bounds on each entry of B. A matrix of all 1s would specify no upper bound for any element; a matrix with 1s on the off-diagonal and 0 on the diagonal would constrain the diagonal entries to be negative. The default is a purely competitive community (`B_upper = 0`)
--   `B_lower` is a binary matrix of dimension *n* × *n* indicating the lower bounds on each entry of B. A matrix of all −1s would specify no lower bound for any element; a matrix with −1s on the off-diagonal and 0 on the diagonal would constrain the diagonal entries to be positive. The defauls is no lower bound (`B_upper = -1`)
+-   `B_lower` is a binary matrix of dimension *n* × *n* indicating the lower bounds on each entry of B. A matrix of all −1s would specify no lower bound for any element; a matrix with −1s on the off-diagonal and 0 on the diagonal would constrain the diagonal entries to be positive. The defaults is no lower bound (`B_upper = -1`)
 -   `chains` the number of mcmc chains to run
 -   `cores` the number of processor cores to use
 -   `iter` the number of MCMC iterations
--   `warmup` the number of warmup iterations before sampling
+-   `warmup` the number of warm-up iterations before sampling
 -   `thin` the number of iterations to skip between samples
 -   `seed` the random seem for the Stan function (default is `10`)
 
@@ -78,10 +78,9 @@ stan_results <- fit_stan(dt, stan_file = "Stan_file.stan", chains = 2,
 
     ## [1] "fitting all endpoints"
 
-Plotting diagnostics
---------------------
+#### Plotting diagnostics
 
-The resulting output is a named list that contains the details of the fit (original data, exluded communities, number of iterations, etc.) as well as the MCMC results. For example, here are the first 10 iterations of the MCMC run, showing the first 4 coefficients (first column) of *B*:
+The resulting output is a named list that contains the details of the fit (original data, excluded communities, number of iterations, etc.) as well as the MCMC results. For example, here are the first 10 iterations of the MCMC run, showing the first 4 coefficients (first column) of *B*:
 
 ``` r
 as.matrix(stan_results$stan_fit)[1:10,1:4]
@@ -114,9 +113,9 @@ plot_diagnostics(stan_results, show_plot = "hist")
 
 ### Step 3: predicting endpoints
 
-To predict the endpoint abundance for a specific subset of species *s*, we take a bootstrap sample from the posterior of *B* and *σ*, subset the matrix *B* by taking the rows and colums correspondin to *s*, and calcualte the negative row sum of this submatrix *B*<sub>*s*</sub>, yielding an estimate of *x*<sup>(*s*)</sup>. To estimate the prediction interval, which takes into account the error, we can sample this endpoint abundance from a lognormal distribution, with standard deviation of *σ*<sub>*s*</sub>.
+To predict the endpoint abundance for a specific subset of species *s*, we take a bootstrap sample from the posterior of *B* and *σ*, subset the matrix *B* by taking the rows and columns corresponding to *s*, and calculate the negative row sum of this sub-matrix *B*<sub>*s*</sub>, yielding an estimate of *x*<sup>(*s*)</sup>. To estimate the prediction interval, which takes into account the error, we can sample this endpoint abundance from a log-normal distribution, with standard deviation of *σ*<sub>*s*</sub>.
 
-This process is implemented in the `boostrap_results` function, which takes the previous `stan_results` list, along with a specified number of boostrap samples, here set to 500:
+This process is implemented in the `boostrap_results` function, which takes the previous `stan_results` list, along with a specified number of bootstrap samples, here set to 500:
 
 ``` r
 br <- bootstrap_results(stan_results, nboot=500)
@@ -156,7 +155,7 @@ If no communities were excluded from the fitting process, this function will plo
 
 ### Step 4: predicting out-of-fit
 
-We can repeat this above anaalysis, but with the removal of one or more communities to test the out-of-fit predictions. To do this, we specify which communities to exclude by listing as a character vector when we call `fit_stan`. Importantly, this function performs a check on the endpoint matrix: if we exlcude too many communitie, or if the original endpoint matrix contain an insufficient number of endpoints to fit *B*, then this function will return an error before calling Stan. Here, for example, we exclude too many communities, such that speces `as` and `fa` never occur together:
+We can repeat this above analysis, but with the removal of one or more communities to test the out-of-fit predictions. To do this, we specify which communities to exclude by listing as a character vector when we call `fit_stan`. Importantly, this function performs a check on the endpoint matrix: if we exclude too many communities, or if the original endpoint matrix contain an insufficient number of endpoints to fit *B*, then this function will return an error before calling Stan. Here, for example, we exclude too many communities, such that species `as` and `fa` never occur together:
 
 ``` r
 stan_reduced <- fit_stan(dt, exclude = c("as-fa","as-fa-la","as-fa-la-po"),
@@ -178,7 +177,7 @@ stan_reduced <- fit_stan(dt, exclude = c("po","as-fa-la"),
 
     ## [1] "excluding communities po, as-fa-la"
 
-After bootrapping these results, the `plot_boot_results` function plots the predictions for the ommitted communities:
+After bootstrapping these results, the `plot_boot_results` function plots the predictions for the omitted communities:
 
 ``` r
 br_reduced <- bootstrap_results(stan_reduced, nboot=500)
