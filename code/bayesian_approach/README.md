@@ -7,14 +7,14 @@ Bayesian approach, as presented in the main text. This method accounts
 for log-normal measurement error in each endpoint abundance, and for the
 fact that each endpoint appears in multiple different equations. This
 method is the recommended approach for fitting this model, though it is
-computationally intensive.
+computationally more intensive.
 
 All the code needed for the analysis is in the file `bayes.R`. The
 Bayesian MCMC algorithm is implemented in the Stan programming language,
 which is called here from within `R`. The details of model is given in
 `Stan_file.stan`, which instructs the MCMC sampler how to calculate the
 log-likelihood at each step. Please see
-`https://mc-stan.org/users/interfaces/` for instructions on installing
+[https://mc-stan.org/](https://mc-stan.org/) for instructions on installing and implementing
 Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and
 `coda` need to be installed for this code to run.
 
