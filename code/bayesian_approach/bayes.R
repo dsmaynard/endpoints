@@ -17,7 +17,7 @@ prepare_data <- function(filename = "../../data/Kuebbing_plants/natives.csv"){
 
 # estimate B using a Bayesian appraoch via Stan
 fit_stan <- function(dt, stan_file, exclude = NULL, B_upper, B_lower,  
-					 chains, cores, iter, thin, warmup, seed=10){
+					 chains, cores, iter, thin, warmup, seed=10, delta=0.85, treedepth=12){
 	# make sure it has a names() field present
 	if(!is_tibble(dt) | !is.data.frame(dt)){
 		stop("E must be a tibble or data frame")
@@ -42,18 +42,24 @@ fit_stan <- function(dt, stan_file, exclude = NULL, B_upper, B_lower,
 	}
 	nspp <- ncol(E)
 	sp_names <- colnames(E)
-	# create indicators for upper/lower bounds
+	# create upper/lower bounds if not supplied
 	if(missing(B_upper)){
-		# constrain the plant community to be competitive
+		# constrain the community to be competitive (zero is the upper bounds for each B_ij)
 		B_upper <- matrix(0,nspp,nspp) 
 	}
 	if(missing(B_lower)){
+		# no lower bound
 		B_lower <- matrix(-1,nspp,nspp)
 	}
-	# get the intial B matrix, assuming a diagonal matrix
-	B_init <- -diag(1/apply(E %>% as.matrix(), 2, function(x) quantile(x[x>0],0.9)))
+	# get the intial B matrix, taking the max obs values, assuming a diagonal matrix
+	B_init <- -diag(1/apply(dt %>% select(-community) %>% as.matrix(), 2, function(x) quantile(x[x>0],0.9)))	
+	B_init[B_init==0] <- -1e-10
 	# set the s.d. for the prior to be the largest diagonal element
 	maxB <- max(abs(B_init))		
+	# calcualte the empirical log sd to initialize the mcmc chains
+	sigmax_init <- dt %>% gather(species,abundance,-community) %>% filter(abundance>0) %>% 
+							group_by(species, community) %>% summarize(sd = sd(log(abundance))) %>% ungroup %>% filter(complete.cases(.)) %>% 
+							group_by(species) %>% summarize(med_sd = mean(sd)) %>% arrange(species) %>% select(med_sd) %>% unlist %>% as.numeric
 	# build stan data list
 	stan_data <- list(	N = ncol(E),
 						M = nrow(E),
@@ -63,19 +69,20 @@ fit_stan <- function(dt, stan_file, exclude = NULL, B_upper, B_lower,
 						y = rep(-1,nspp),
 						maxB = maxB)
 	# initialization vector
-	init_list <- replicate(chains,list(sigmax = rep(0.25,nspp), B = B_init), simplify = FALSE)	
+	init_list <- replicate(chains,list(sigmax = sigmax_init, B = B_init), simplify = FALSE)	
 	# stan options
+	options(mc.cores = parallel::detectCores())	
 	Sys.setenv(USE_CXX14 = 1)	
 	rstan_options(auto_write = TRUE)	
 	# check to make sure we have enough endpoints
 	check_endpoints(E)
 	# fit the stan model!
 	stan_fit <- stan(stan_file, data=stan_data, cores = cores, iter=iter, thin = thin, warmup=warmup, 
-						chains = chains, seed=seed, init=init_list)
+						chains = chains, seed=seed, init=init_list, control = list(adapt_delta = delta, max_treedepth=treedepth))
 	return(list(E_full = dt, E = E, stan_fit=stan_fit, exclude = exclude, B_upper = B_upper, B_lower = B_lower, B_init = B_init, seed = seed))
 }
 			
-# make sure we have enough endpoints, using lm. returns an error code if not
+# make sure we have enough endpoints, using lm. Returns an error code if not enough
 check_endpoints <- function(E){
 	nspp <- ncol(E)
 	# get the median value across 
@@ -89,9 +96,8 @@ check_endpoints <- function(E){
 		B_lm[i,] <- as.numeric(lm(rep(-1,nrow(myE))~-1+myE)$coefficients)
 	}
 	if(any(is.na(B_lm))){
-		stop("Not enough endpoint to fit")
+		stop("Not enough endpoints to fit")
 	}
-	return()
 }
 	
 # plot the mcmc results, along with histograms and obs vs. pred
@@ -190,7 +196,7 @@ bootstrap_results <- function(stan_results, nboot){
 
 
 # plot the boostrap results, both violin and obs vs. pred
-plot_boot_results <- function(boot_results, show_plot = "both"){
+plot_boot_results <- function(boot_results, show_plot = "both", return_plots = FALSE){
 	if(show_plot == "both"){
 		show_plot <- c("violin","obs_pred")
 	}
@@ -220,10 +226,12 @@ plot_boot_results <- function(boot_results, show_plot = "both"){
 			show(g1)
 		}
 		if("obs_pred"%in%show_plot){
-			print("Plotting observed vs. pred")
+			print("Plotting observed vs. predicted medians")
 			show(g2)
 		}
-		return(list(obs_pred = g2, violin = g1))
+		if(return_plots){
+			return(list(obs_pred = g2, violin = g1))
+		}
 	})
 }
 
