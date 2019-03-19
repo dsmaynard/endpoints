@@ -198,7 +198,7 @@ function, either specifying the median observed vs. predicted values
 intervals (`show_plot = "violin"`), or both. If no communities were
 excluded from the fitting process, this function will plot all the
 posterior prediction interval of all communities, including unobserved
-communities (e.g., `as-la-po`):
+communities (e.g., `as-fa-po`):
 
 ``` r
 plot_boot_results(br, show_plot = "violin")
