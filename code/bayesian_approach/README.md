@@ -83,7 +83,7 @@ parameters:
   - `exclude` specifies which communities to exclude. If set to `NULL`
     (default) all endpoints are used. Otherwise it takes a character
     vector of communities to exclude, e.g., `c("fa","fa-po")`.
-  - `B_upper` is a binary matrix of dimension \(n\times n\) indicating
+  - `B_upper` is a binary matrix of dimension \($n\times n$\) indicating
     the upper bounds on each entry of B. A matrix of all \(1\)s would
     specify no upper bound for any element; a matrix with \(1\)s on the
     off-diagonal and \(0\) on the diagonal would constrain the diagonal
