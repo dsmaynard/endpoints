@@ -7,14 +7,14 @@ Bayesian approach, as presented in the main text. This method accounts
 for log-normal measurement error in each endpoint abundance, and for the
 fact that each endpoint appears in multiple different equations. This
 method is the recommended approach for fitting this model, though it is
-computationally intensive.
+computationally more intensive.
 
 All the code needed for the analysis is in the file `bayes.R`. The
 Bayesian MCMC algorithm is implemented in the Stan programming language,
 which is called here from within `R`. The details of model is given in
 `Stan_file.stan`, which instructs the MCMC sampler how to calculate the
 log-likelihood at each step. Please see
-`https://mc-stan.org/users/interfaces/` for instructions on installing
+[https://mc-stan.org/](https://mc-stan.org/) for instructions on installing and implementing
 Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and
 `coda` need to be installed for this code to run.
 
@@ -83,7 +83,7 @@ parameters:
   - `exclude` specifies which communities to exclude. If set to `NULL`
     (default) all endpoints are used. Otherwise it takes a character
     vector of communities to exclude, e.g., `c("fa","fa-po")`.
-  - `B_upper` is a binary matrix of dimension \(n\times n\) indicating
+  - `B_upper` is a binary matrix of dimension \($n\times n$\) indicating
     the upper bounds on each entry of B. A matrix of all \(1\)s would
     specify no upper bound for any element; a matrix with \(1\)s on the
     off-diagonal and \(0\) on the diagonal would constrain the diagonal
@@ -162,7 +162,7 @@ plot_diagnostics(stan_results, show_plot = "hist")
 
 To predict the endpoint abundance for a specific subset of species
 \(s\), we first take a random bootstrap sample from the posterior of
-\(B\) and \(\sigma\). We then subset these elements by taking only the
+\(B\) and <p>$sigma</p>. We then subset these elements by taking only the
 entries corresponding to \(s\), and calculate the negative row sum of
 the sub-matrix \(B_s\). To estimate the prediction interval, which takes
 into account the error, we can sample this endpoint abundance from a
@@ -198,7 +198,7 @@ function, either specifying the median observed vs. predicted values
 intervals (`show_plot = "violin"`), or both. If no communities were
 excluded from the fitting process, this function will plot all the
 posterior prediction interval of all communities, including unobserved
-communities (e.g., `as-la-po`):
+communities (e.g., `as-fa-po`):
 
 ``` r
 plot_boot_results(br, show_plot = "violin")
