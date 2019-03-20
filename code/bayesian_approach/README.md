@@ -13,10 +13,12 @@ All the code needed for the analysis is in the file `bayes.R`. The
 Bayesian MCMC algorithm is implemented in the Stan programming language,
 which is called here from within `R`. The details of model is given in
 `Stan_file.stan`, which instructs the MCMC sampler how to calculate the
-log-likelihood at each step. Please see
-[https://mc-stan.org/](https://mc-stan.org/) for instructions on installing and implementing
-Stan. In addition to Stan, the libraries `rstan`, `tidyverse`, and
-`coda` need to be installed for this code to run.
+log-likelihood at each step. Please see <https://mc-stan.org/> for
+instructions on installing and implementing Stan. In addition to Stan,
+the libraries `rstan`, `tidyverse`, and `coda` need to be installed for
+this code to run.
+
+First we source the `R` functions in the `bayes.R` script:
 
 ``` r
 source("bayes.R")
@@ -24,11 +26,9 @@ source("bayes.R")
 
 ### Step 1: label the data
 
-First, call the function `prepare_data` using one of the available data
-sets, or any other data set organized in the same manner. The data file
-should be in csv format, with one column for each species, and one row
-for each recorded endpoint. The header should specify the name of the
-species:
+The data file should be in csv format, with one column for each species,
+and one row for each recorded endpoint. The header should specify the
+name of the species:
 
 ``` r
 dt <- read_csv("../../data/Kuebbing_plants/natives.csv")
@@ -38,16 +38,16 @@ dt %>% sample_n(10) # show 10 endpoints sampled at random
     ## # A tibble: 10 x 4
     ##        as     fa     la     po
     ##     <dbl>  <dbl>  <dbl>  <dbl>
-    ##  1 2.3062 0.0000 0.0000 0.0000
-    ##  2 0.0000 5.9155 0.0000 0.0000
-    ##  3 1.0721 0.0000 0.2841 2.3706
-    ##  4 0.0000 5.4665 0.7804 0.0000
-    ##  5 0.0000 3.8062 0.7461 0.0000
-    ##  6 1.7032 0.0000 0.4959 0.0000
-    ##  7 1.5636 3.3596 0.0000 1.4794
-    ##  8 2.1218 0.0000 0.0000 2.6323
-    ##  9 0.0000 3.3063 0.2964 0.0000
-    ## 10 0.0000 3.4098 0.0000 2.8608
+    ##  1 0.0000 5.7740 0.0000 0.0000
+    ##  2 1.3212 2.5017 0.0000 0.0000
+    ##  3 0.0000 0.0000 0.5178 3.9811
+    ##  4 2.7389 1.7205 0.6208 0.0000
+    ##  5 1.8360 3.3019 0.0000 0.0000
+    ##  6 0.0000 4.3215 1.4273 0.0000
+    ##  7 0.0000 0.0000 0.8931 0.0000
+    ##  8 0.0000 0.0000 0.0000 3.9907
+    ##  9 0.0000 8.0686 0.0000 0.0000
+    ## 10 2.9240 2.3903 0.2379 4.3230
 
 The function `prepare_data` simply adds a column containing a label for
 the
@@ -59,22 +59,22 @@ dt %>% sample_n(10)
 ```
 
     ## # A tibble: 10 x 5
-    ##        as     fa     la     po   community
-    ##     <dbl>  <dbl>  <dbl>  <dbl>       <chr>
-    ##  1 1.5271 4.8254 0.8044 0.8994 as-fa-la-po
-    ##  2 1.6836 4.0592 0.0000 0.0000       as-fa
-    ##  3 2.1037 0.0000 0.6513 0.9355    as-la-po
-    ##  4 0.0000 5.5568 1.5574 0.0000       fa-la
-    ##  5 0.0000 0.0000 0.0000 3.5237          po
-    ##  6 0.0000 0.0000 2.1836 0.4566       la-po
-    ##  7 0.0000 0.0000 3.0026 0.0000          la
-    ##  8 0.8645 5.1234 0.2628 0.3762 as-fa-la-po
-    ##  9 0.0000 8.0853 1.0655 0.0000       fa-la
-    ## 10 1.2897 0.0000 0.9784 0.0000       as-la
+    ##        as      fa     la     po   community
+    ##     <dbl>   <dbl>  <dbl>  <dbl>       <chr>
+    ##  1 2.1871  0.0000 0.0000 0.0000          as
+    ##  2 0.0000  8.5424 0.0000 1.5651       fa-po
+    ##  3 0.0000 10.0422 0.0000 0.0000          fa
+    ##  4 0.0000  0.0000 1.8329 1.1232       la-po
+    ##  5 0.0000  4.8948 1.1617 1.0609    fa-la-po
+    ##  6 0.9668  4.3570 0.5509 0.6385 as-fa-la-po
+    ##  7 0.0000  0.0000 0.8733 1.7766       la-po
+    ##  8 2.2107  0.0000 1.0487 0.9990    as-la-po
+    ##  9 0.0000  0.0000 0.0000 3.9313          po
+    ## 10 1.6836  4.0592 0.0000 0.0000       as-fa
 
 ### Step 2: fitting all endpoints
 
-To use all of the available data to estimate \(B\) via a Bayesian
+To use all of the available data to estimate *B* via a Bayesian
 approach, call the function `fit_stan`, which calls the `stan` function
 within R. The `fit_stan` function allows you to adjust several
 parameters:
@@ -83,26 +83,26 @@ parameters:
   - `exclude` specifies which communities to exclude. If set to `NULL`
     (default) all endpoints are used. Otherwise it takes a character
     vector of communities to exclude, e.g., `c("fa","fa-po")`.
-  - `B_upper` is a binary matrix of dimension \($n\times n$\) indicating
-    the upper bounds on each entry of B. A matrix of all \(1\)s would
-    specify no upper bound for any element; a matrix with \(1\)s on the
-    off-diagonal and \(0\) on the diagonal would constrain the diagonal
+  - `B_upper` is a binary matrix of dimension *n x n* indicating the
+    upper bounds on each entry of B. A matrix of all *1*s would specify
+    no upper bound for any element; a matrix with *1*s on the
+    off-diagonal and *0* on the diagonal would constrain the diagonal
     entries to be negative, and so on. The default is a purely
     competitive community (`B_upper = 0`).
-  - `B_lower` is a binary matrix of dimension \(n\times n\) indicating
-    the lower bounds on each entry of B. A matrix of all \(-1\)s would
-    specify no lower bound for any element; a matrix with \(-1\)s on the
-    off-diagonal and \(0\) on the diagonal would constrain the diagonal
+  - `B_lower` is a binary matrix of dimension *n x n* indicating the
+    lower bounds on each entry of B. A matrix of all *-1*s would specify
+    no lower bound for any element; a matrix with *-1*s on the
+    off-diagonal and *0* on the diagonal would constrain the diagonal
     entries to be positive. The defaults is no lower bound (`B_upper =
     -1`).
-  - `chains` the number of mcmc chains to run.
+  - `chains` the number of MCMC chains to run.
   - `cores` the number of processor cores to use.
   - `iter` the number of MCMC iterations.
   - `warmup` the number of warm-up iterations before sampling.
   - `thin` the number of iterations to skip between samples.
   - `delta` the adaptive delta value used in the MCMC routine (default
     is `0.85`)
-  - `treedepth` the maximum treedepth used in the MCMC routine (default
+  - `treedepth` the maximum tree depth used in the MCMC routine (default
     is `12`)
   - `seed` the random seem for the Stan function (default is `10`).
 
@@ -121,8 +121,7 @@ stan_results <- fit_stan(dt, stan_file = "Stan_file.stan", chains = 2,
 The resulting output is a named list that contains the details of the
 fit (original data, excluded communities, number of iterations, etc.) as
 well as the MCMC results. For example, here are the first 10 iterations
-of the MCMC run, showing the first 4 coefficients (first column) of
-\(B\):
+of the MCMC run, showing the first 4 coefficients (first column) of *B*:
 
 ``` r
 as.matrix(stan_results$stan_fit)[1:10,1:4]
@@ -143,10 +142,10 @@ as.matrix(stan_results$stan_fit)[1:10,1:4]
 
 From this output, we can plot diagnostics by calling the
 `plot_diagnostics` function, specifying either histograms of the entries
-of \(B\) (`show_plot = "hist"`) or the full MCMC output across all
+of *B* (`show_plot = "hist"`) or the full MCMC output across all
 iterations (`show_plot = "chains"`), or both. Here we plot the histogram
 of the posterior of
-    \(B\):
+    *B*:
 
 ``` r
 plot_diagnostics(stan_results, show_plot = "hist") 
@@ -160,13 +159,14 @@ plot_diagnostics(stan_results, show_plot = "hist")
 
 ### Step 3: predicting endpoints
 
-To predict the endpoint abundance for a specific subset of species
-\(s\), we first take a random bootstrap sample from the posterior of
-\(B\) and <p>$sigma</p>. We then subset these elements by taking only the
-entries corresponding to \(s\), and calculate the negative row sum of
-the sub-matrix \(B_s\). To estimate the prediction interval, which takes
-into account the error, we can sample this endpoint abundance from a
-log-normal distribution, with standard deviation of \(\sigma_s\).
+To predict the endpoint abundance for a specific subset of species *s*,
+we first take a random bootstrap sample from the posterior of *B* and
+the species-specific standard deviations. We then subset these elements
+by taking only the entries corresponding to *s*, and calculate the
+negative row sum of the resulting sub-matrix. To estimate the prediction
+interval, which takes into account the error, we can sample this
+endpoint abundance from a log-normal distribution with the posterior
+standard deviation.
 
 This process is implemented in the `boostrap_results` function, which
 takes the previous `stan_results` list, along with a specified number of
@@ -198,7 +198,7 @@ function, either specifying the median observed vs. predicted values
 intervals (`show_plot = "violin"`), or both. If no communities were
 excluded from the fitting process, this function will plot all the
 posterior prediction interval of all communities, including unobserved
-communities (e.g., `as-fa-po`):
+communities (e.g., `as-la-po`):
 
 ``` r
 plot_boot_results(br, show_plot = "violin")
@@ -224,7 +224,7 @@ the omitted communities as a character vector in the `exclude` argument
 when we call `fit_stan`. Importantly, this function performs a check on
 the endpoint matrix: if we exclude too many communities, or if the
 original endpoint matrix contain an insufficient number of endpoints to
-fit \(B\), then this function will return an error before calling Stan.
+fit *B*, then this function will return an error before calling Stan.
 Here, for example, we exclude too many communities, such that species
 `as` and `fa` never occur
 together:
@@ -240,8 +240,8 @@ stan_reduced <- fit_stan(dt, exclude = c("as-fa","as-fa-la","as-fa-la-po"),
     ## Error in check_endpoints(E): Not enough endpoints to fit
 
 Otherwise, provided there are enough endpoints, the specified
-communities are removed from the dataset, and \(B\) is estimated using
-the reduced data:
+communities are removed from the dataset, and *B* is estimated using the
+reduced data:
 
 ``` r
 stan_reduced <- fit_stan(dt, exclude = c("as-fa","as-fa-la"),
