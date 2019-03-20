@@ -162,7 +162,7 @@ plot_diagnostics(stan_results, show_plot = "hist")
 
 To predict the endpoint abundance for a specific subset of species
 \(s\), we first take a random bootstrap sample from the posterior of
-\(B\) and \[\sigma\]. We then subset these elements by taking only the
+\(B\) and <p>$sigma</p>. We then subset these elements by taking only the
 entries corresponding to \(s\), and calculate the negative row sum of
 the sub-matrix \(B_s\). To estimate the prediction interval, which takes
 into account the error, we can sample this endpoint abundance from a
