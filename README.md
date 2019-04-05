@@ -2,7 +2,7 @@
 
 This repository contains the code and data accompanying the manuscript *Predicting coexistence in experimental ecological communities*, by Daniel Maynard, Zachary Miller and Stefano Allesina. 
 
-You can find a preprint of the manuscript here https://www.biorxiv.org/content/early/2019/04/04/598326.full.pdf
+You can find a preprint of the manuscript here https://www.biorxiv.org/content/10.1101/598326v1
 
 ## Organization of the repository
 
