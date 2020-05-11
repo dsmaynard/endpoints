@@ -4,7 +4,7 @@
  
 **Daniel S. Maynard, Zachary Miller, Stefano Allesina**
 
-This repository contains code accompanying the [published manuscript](https://www.nature.com/articles/s41559-019-1059-z). A preprint is also available [here](https://www.biorxiv.org/content/10.1101/598326v1). Note that there was a publisher correction made to the original formatting, so please download a new copy of the manuscipt to ensure the typesetting is correct. 
+This repository contains code accompanying the [published manuscript](https://www.nature.com/articles/s41559-019-1059-z). A preprint is also available [here](https://www.biorxiv.org/content/10.1101/598326v1). Note that there was a publisher correction made to the original formatting, so please download the latest version of the manuscipt to ensure the typesetting is correct. 
 
 Please email Dan Maynard ([dan.s.maynard@gmail.com](mailto:dan.s.maynard@gmail.com)) or Stefano Allesina ([sallesina@uchicago.edu](mailto:sallesina@uchicago.edu)) with any questions. 
 
