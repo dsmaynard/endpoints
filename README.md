@@ -1,8 +1,6 @@
-# Predicting coexistence in experimental ecological communities
+## Predicting coexistence in experimental ecological communities
 
-This repository contains the code and data accompanying the manuscript *Predicting coexistence in experimental ecological communities*, by Daniel Maynard, Zachary Miller and Stefano Allesina. 
-
-You can find a preprint of the manuscript here https://www.biorxiv.org/content/10.1101/598326v1.
+**Daniel S. Maynard, Zachary Miller, Stefano Allesina, 2020. _Nature Ecology & Evolution_, 4:91-100** This repository contains code accompanying the [published manuscript](https://www.nature.com/articles/s41559-019-1059-z). A preprint is also available [here](https://www.biorxiv.org/content/10.1101/598326v1]) Note that there was a publisher correction made to the original formatting, so please download a new copy of the manuscipt to ensure the typesetting is correct. 
 
 ## Organization of the repository
 
