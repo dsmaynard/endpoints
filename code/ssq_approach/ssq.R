@@ -38,7 +38,7 @@ SSQ <- function(Bvec, to_fit_tidy, presence, use_logs){
     if (any(xstar < 0)){
       xstar[] <- PENALIZATION
     } 
-    presence[i, c(present_species, FALSE)] <- xstar
+    presence[i, c(present_species, FALSE)] <- as.list(xstar)
   }
   for_ssq <- to_fit_tidy %>% left_join(presence %>% gather("species", "predicted", -community) %>% filter(predicted > 0),
                                        by = c("community", "species"))
@@ -94,9 +94,9 @@ fit_endpoints <- function(dt, # the data to fit
    for (i in 1:nrow(predicted)){
      present_species <- predicted[i, 1:n] > 0
      xstar <- -rowSums(solve(B[present_species, present_species, drop = FALSE]))
-     predicted[i, c(present_species, FALSE)] <- xstar
+     predicted[i, c(present_species, FALSE)] <- as.list(xstar)
      if (any(xstar < 0)){
-       predicted[i, c(present_species, FALSE)] <- -1  
+       predicted[i, c(present_species, FALSE)] <- as.list(rep(-1, sum(present_species)))  
      }
    }
    # now organize into observed and predicted
